@@ -21,13 +21,7 @@ async def get_current_user(
         user = await UserService.get_current_user(uow, token)
         if not user:
             raise TokenIsNotValidException()
-        return UserDTO(
-            username=user.username,
-            password=user.password,
-            email=user.email,
-            is_admin=user.is_admin,
-            permissions=user.permissions,
-        )
+        return user
     except (JWTError, TokenIsNotValidException) as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 

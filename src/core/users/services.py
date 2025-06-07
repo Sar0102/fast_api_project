@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Sequence
+from typing import Any
 
 import bcrypt
 from jose import jwt
@@ -7,8 +7,7 @@ from jose.constants import ALGORITHMS
 
 from infrastructure.database.exceptions import UnitOfWorkError
 from infrastructure.database.uow import UnitOfWork
-from infrastructure.models import UserModel
-from .dto import UserCreateDTO
+from .dto import UserCreateDTO, UserDTO
 from .entities import AdminUser, RegularUser
 from .exceptions import TokenIsNotValidException, UserAlreadyExistsException, ServiceError
 
@@ -20,7 +19,7 @@ REFRESH_TOKEN_EXPIRES_MINUTES = 60
 
 class UserService:
     @classmethod
-    async def get_all(cls, uow: UnitOfWork) -> Sequence[UserModel]:
+    async def get_all(cls, uow: UnitOfWork) -> list[UserDTO]:
         async with uow:
             return await uow.user.get_all()
 
@@ -56,12 +55,12 @@ class UserService:
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
     @classmethod
     async def authenticate_user(
         cls, uow: UnitOfWork, username: str, password: str
-    ) -> UserModel | None:
+    ) -> UserDTO | None:
         async with uow:
             user = await uow.user.get_by_username(username)
             if not user or not cls.verify_password(password, str(user.password)):
@@ -76,10 +75,11 @@ class UserService:
         return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
     @classmethod
-    async def get_current_user(cls, uow: UnitOfWork, token: str) -> UserModel | None:
+    async def get_current_user(cls, uow: UnitOfWork, token: str) -> UserDTO | None:
         async with uow:
             username = cls.verify_token(token, token_type="access")
             user = await uow.user.get_by_username(username)
+            delattr(user, "password")
             return user
 
     @staticmethod

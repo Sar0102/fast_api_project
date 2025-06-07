@@ -1,11 +1,9 @@
-from typing import Sequence, List
 
 from sqlalchemy import select, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.users.dto import UserDTO
 from core.users.entities import BaseUser
-from infrastructure.models import UserModel
 from infrastructure.models.user import UserModel
 
 
@@ -13,13 +11,23 @@ class UserRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def get_by_username(self, username: str) -> UserModel | None:
+    async def get_by_username(self, username: str) -> UserDTO | None:
         stmt = select(UserModel).where(UserModel.username == username)
         result = await self.session.execute(stmt)
 
-        return result.scalar_one_or_none()
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+        return UserDTO(
+            id=row.id,
+            username=row.username,
+            email=row.email,
+            is_admin=row.is_admin,
+            permissions=row.permissions,
+            password=row.password,
+        )
 
-    async def get_all(self) -> Sequence[UserModel]:
+    async def get_all(self) -> list[UserDTO]:
         stmt = select(UserModel)
         result = await self.session.execute(stmt)
         return [
