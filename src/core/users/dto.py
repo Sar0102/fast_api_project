@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+from typing import Annotated
+
+from pydantic import BaseModel, PrivateAttr
 
 
 class UserDTO(BaseModel):
@@ -7,6 +9,8 @@ class UserDTO(BaseModel):
     email: str
     is_admin: bool
     permissions: list[str] | None = (None,)
+
+    password: Annotated[str | None, PrivateAttr(default=None)] = None
 
 
 class UserCreateDTO(BaseModel):

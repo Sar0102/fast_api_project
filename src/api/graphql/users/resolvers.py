@@ -4,7 +4,6 @@ import strawberry
 from strawberry import Info
 from strawberry.file_uploads import Upload
 
-from api.graphql.decorators import require_authentication, paginate
 from api.graphql.users.schemas import User, Token, UserPage
 from core.users.dto import UserCreateDTO
 from core.users.services import (
