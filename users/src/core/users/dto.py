@@ -17,7 +17,7 @@ class UserCreateDTO(BaseModel):
     username: str
     password: str
     email: str
-    is_admin: bool
+    is_admin: bool = False
     permissions: list[str] | None = None
 
 
@@ -27,3 +27,8 @@ class AccessTokenDTO(BaseModel):
 
 class RefreshTokenDTO(AccessTokenDTO):
     refresh_token: str
+
+
+class UserLoginDTO(BaseModel):
+    username: str
+    password: str

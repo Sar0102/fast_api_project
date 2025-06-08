@@ -9,7 +9,7 @@ from starlette import status
 
 from api.rest import responses
 from api.rest.users.decorators import handle_user_errors
-from core.users.dto import UserCreateDTO, UserDTO, RefreshTokenDTO, AccessTokenDTO
+from core.users.dto import UserCreateDTO, UserDTO, RefreshTokenDTO, AccessTokenDTO, UserLoginDTO
 from dependencies import get_current_user
 from core.permissions import Permissions
 from core.users.services import (
@@ -19,6 +19,7 @@ from core.users.services import (
 )
 from core.users.exceptions import TokenIsNotValidException
 from infrastructure.database.uow import UnitOfWork
+from infrastructure.loging_configs.local import logger
 
 user_router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -31,11 +32,11 @@ async def get_permissions() -> list[str]:
     return Permissions.list()
 
 
-@user_router.post(path="/", responses={**responses.ObjectCreatedResponse.docs()})
+@user_router.post(path="/register", responses={**responses.ObjectCreatedResponse.docs()})
 @handle_user_errors
 async def create_user(
-    uow: Annotated[UnitOfWork, Depends(UnitOfWork)],
-    create_dto: UserCreateDTO,
+        uow: Annotated[UnitOfWork, Depends(UnitOfWork)],
+        create_dto: UserCreateDTO,
 ):
     object_id = await UserService.add(
         uow=uow,
@@ -46,27 +47,31 @@ async def create_user(
 
 @user_router.get("/")
 async def get_users(
-    uow: Annotated[UnitOfWork, Depends(UnitOfWork)],
+        uow: Annotated[UnitOfWork, Depends(UnitOfWork)],
 ) -> list[UserDTO]:
     return await UserService.get_all(uow)
 
 
-@user_router.get("/login")
+@user_router.post("/login")
 async def login(
-    uow: Annotated[UnitOfWork, Depends(UnitOfWork)], username: str, password: str
+        uow: Annotated[UnitOfWork, Depends(UnitOfWork)],
+        login_dto: UserLoginDTO
 ) -> RefreshTokenDTO:
-    user = await UserService.authenticate_user(uow, username, password)
+    user = await UserService.authenticate_user(uow, login_dto.username, login_dto.password)
     if not user:
+        logger.error("User authentication failed for username: %s", login_dto.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password or username"
         )
+    logger.info("User authenticated successfully: %s", login_dto.username)
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINUTES)
     refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRES_MINUTES)
     access_token = UserService.create_token(
-        data={"sub": username, "type": "access"}, expires_delta=access_token_expires
+        data={"sub": login_dto.username, "type": "access"}, expires_delta=access_token_expires
     )
     refresh_token = UserService.create_token(
-        data={"sub": username, "type": "refresh"}, expires_delta=refresh_token_expires
+        data={"sub": login_dto.username, "type": "refresh"}, expires_delta=refresh_token_expires
     )
 
     return RefreshTokenDTO(
