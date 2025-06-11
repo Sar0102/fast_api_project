@@ -6,10 +6,10 @@ from starlette.staticfiles import StaticFiles
 from strawberry.fastapi import GraphQLRouter
 
 from api.graphql.resolvers import Query, Mutation
-from api.rest.products.views import product_router
-from api.rest.users.views import user_router
+from api.rest.views import product_router
 from dependencies import context_dependency
 
+MEDIA_DIR = "media"
 
 def create_app() -> FastAPI:
     """
@@ -24,13 +24,12 @@ def create_app() -> FastAPI:
         redoc_url="/api/v1/redoc",
     )
 
-    MEDIA_DIR = "media"
+
 
     os.makedirs(MEDIA_DIR, exist_ok=True)
 
     api_v1_router = APIRouter(prefix="/v1/api")
     api_v1_router.include_router(product_router)
-    api_v1_router.include_router(user_router)
     app.include_router(api_v1_router)
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)

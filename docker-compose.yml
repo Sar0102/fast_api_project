@@ -13,6 +13,27 @@ services:
     volumes:
       - ./users/src:/app
 
+
+  product_app:
+    build:
+      context: products/
+    container_name: products_app
+    command: python main.py
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:123456@db:5432/mydatabase
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./products/src:/app
+
+  product_redis:
+    image: redis:latest
+    container_name: product_redis_container
+    volumes:
+      - product_redis_data:/data
+
   db:
     image: postgres:16
     container_name: postgres_db

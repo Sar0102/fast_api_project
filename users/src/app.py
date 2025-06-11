@@ -10,6 +10,7 @@ from api.graphql.resolvers import Query, Mutation
 from api.rest.users.views import user_router
 from dependencies import context_dependency
 
+MEDIA_DIR = "media"
 
 def create_app() -> FastAPI:
     """
@@ -32,7 +33,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    MEDIA_DIR = "media"
+
 
     os.makedirs(MEDIA_DIR, exist_ok=True)
 
