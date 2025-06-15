@@ -1,3 +1,4 @@
+import asyncio
 import os
 
 import strawberry
@@ -8,8 +9,12 @@ from strawberry.fastapi import GraphQLRouter
 from api.graphql.resolvers import Query, Mutation
 from api.rest.views import product_router
 from dependencies import context_dependency
+from products.src.infrastructure.kafka.consumer import consumer_events
 
 MEDIA_DIR = "media"
+
+async def lifespan(app: FastAPI):
+    asyncio.create_task(consumer_events())
 
 def create_app() -> FastAPI:
     """
